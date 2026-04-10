@@ -2,7 +2,7 @@ import reviewService from '../services/review.service.js';
 
 export const handleWebhook = async (req, res, next) => {
   try {
-    console.log('Received GitHub event--:', req.body);
+    console.log('Received GitHub event 1:', req.body);
     const event = req.headers['x-github-event'];
     const payload = req.body;
 
@@ -19,11 +19,11 @@ export const handleWebhook = async (req, res, next) => {
         const pullNumber = pull_request.number;
 
         console.log(`Processing review for ${owner}/${repo} PR #${pullNumber}`);
-        
+
         // Run processing in background (don't block the webhook response)
         reviewService.processPullRequest(owner, repo, pullNumber)
           .catch(err => console.error('Error in background process:', err));
-        
+
         return res.status(202).json({ message: 'Review process started' });
       }
     }
