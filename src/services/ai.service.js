@@ -57,6 +57,7 @@ export class AIService {
         const prompt = diffAnalyzerPrompt(diff);
         const result = await model.generateContent(prompt);
         const response = await result.response;
+        console.log("AI RESPONSE", response.text());
         return response.text();
       });
     });
