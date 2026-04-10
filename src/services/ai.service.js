@@ -44,7 +44,12 @@ export class AIService {
 
   async getModel() {
     if (!this.genAI) return null;
-    return this.genAI.getGenerativeModel({ model: this.modelName });
+    return this.genAI.getGenerativeModel({
+      model: this.modelName,
+      generationConfig: {
+        responseMimeType: 'application/json',
+      },
+    });
   }
 
   async analyzeDiff(diff) {

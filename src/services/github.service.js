@@ -1,50 +1,30 @@
 import { Octokit } from 'octokit';
+import { createAppAuth } from '@octokit/auth-app';
 import config from '../config/env.config.js';
 
-/**
- * Service to interact with the GitHub API using Octokit
- */
 export class GitHubService {
-  constructor() {
-    this.octokit = this._initializeOctokit();
-  }
-
-  /**
-   * Initialize Octokit with either PAT or GitHub App credentials
-   */
-  _initializeOctokit() {
-    const { personalAccessToken, appId, privateKey } = config.github;
-
-    if (personalAccessToken) {
-      console.log('GitHub Service: Authenticating using Personal Access Token (PAT)');
-      return new Octokit({ auth: personalAccessToken });
+  _getOctokit(installationId) {
+    if (!installationId) {
+      throw new Error('installationId is required for GitHub App authentication');
     }
 
-    if (appId && privateKey) {
-      console.log('GitHub Service: Authenticating using GitHub App credentials');
-      // For a GitHub App, we would typically use @octokit/auth-app
-      // but to keep it simple and within the same 'octokit' package:
-      return new Octokit({
-        authStrategy: null, // Placeholder for App Auth if needed
-        auth: {
-          appId,
-          privateKey,
-        }
-      });
-    }
-
-    console.warn('GitHub Service: No valid authentication found. API calls may fail.');
-    return new Octokit();
+    return new Octokit({
+      authStrategy: createAppAuth,
+      auth: {
+        appId: config.github.appId,
+        privateKey: config.github.privateKey,
+        installationId,
+      },
+    });
   }
 
   /**
    * Fetches the diff of a Pull Request
    */
-  async getPullRequestDiff(owner, repo, pullNumber) {
+  async getPullRequestDiff(installationId, owner, repo, pullNumber) {
     try {
-      console.log(`Fetching diff for PR #${pullNumber} in ${owner}/${repo}`);
-      
-      const { data } = await this.octokit.rest.pulls.get({
+      const octokit = this._getOctokit(installationId);
+      const { data } = await octokit.rest.pulls.get({
         owner,
         repo,
         pull_number: pullNumber,
@@ -60,48 +40,76 @@ export class GitHubService {
     }
   }
 
-  /**
-   * Posts a review with line-specific comments to a Pull Request
-   * @param {string} owner 
-   * @param {string} repo 
-   * @param {number} pullNumber 
-   * @param {Array} comments Array of { path, line, body }
-   */
-  async postReview(owner, repo, pullNumber, comments) {
+  _formatSeverityLabel(severity) {
+    switch (severity?.toLowerCase()) {
+      case 'high':
+        return '🚨 **[High]**';
+      case 'medium':
+        return '⚠️ **[Medium]**';
+      case 'low':
+        return '💡 **[Low]**';
+      default:
+        return '📝 **[Note]**';
+    }
+  }
+
+  // Posts a review with line-specific comments to a Pull Request
+  async postReview(installationId, owner, repo, pullNumber, comments, summary = '') {
+    const octokit = this._getOctokit(installationId);
+
     try {
-      console.log(`Posting review to PR #${pullNumber} with ${comments.length} comments`);
-      
-      await this.octokit.rest.pulls.createReview({
+      const reviewPayload = {
         owner,
         repo,
         pull_number: pullNumber,
         event: 'COMMENT',
-        comments: comments.map(c => ({
-          path: c.path || c.file, // Support both 'path' and 'file' naming
-          line: c.line,
-          body: c.comment || c.body,
-        })),
-      });
+        body: summary,
+        comments: (comments || [])
+          .filter(c => (c.path || c.file) && c.line && (c.comment || c.body))
+          .map(c => ({
+            path: c.path || c.file,
+            line: parseInt(c.line, 10),
+            body: `${this._formatSeverityLabel(c.severity)} ${c.comment || c.body}`,
+          })),
+      };
 
+      await octokit.rest.pulls.createReview(reviewPayload);
       console.log('Review posted successfully.');
     } catch (error) {
-      console.error('Error posting PR review:', error);
-      // Fallback: post a single top-level comment if review fails
-      await this.postComment(owner, repo, pullNumber, 'AI Review completed, but encountered an error posting line comments.');
+      console.error('Error posting PR review natively:', error);
+
+      // If line-specific review fails, consolidate everything into a single Markdown comment
+      let fallbackBody = `${summary}\n\n---\n\n#### Detailed AI Suggestions\n\n`;
+
+      if (comments && comments.length > 0) {
+        comments.forEach(c => {
+          const path = c.path || c.file;
+          const line = c.line;
+          const body = c.comment || c.body;
+          fallbackBody += `**File:** \`${path}\` | **Line:** ${line}\n\n${this._formatSeverityLabel(c.severity)} ${body}\n\n---\n`;
+        });
+      } else {
+        fallbackBody += "_No specific line comments._";
+      }
+
+      // Falling back to single top-level comment due to line-specific comment error.
+      await this.postComment(installationId, owner, repo, pullNumber, fallbackBody);
     }
   }
 
   /**
    * Posts a top-level comment to a Pull Request
    */
-  async postComment(owner, repo, pullNumber, body) {
+  async postComment(installationId, owner, repo, pullNumber, body) {
     try {
-      await this.octokit.rest.issues.createComment({
+      const octokit = this._getOctokit(installationId);
+      await octokit.rest.issues.createComment({
         owner,
         repo,
         issue_number: pullNumber,
         body,
       });
+      console.log('Fallback top-level comment posted.');
     } catch (error) {
       console.error('Error posting PR comment:', error.message);
     }

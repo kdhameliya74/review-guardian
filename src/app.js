@@ -1,10 +1,31 @@
 import express from 'express';
 import bodyParser from 'body-parser';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import cors from 'cors';
 import webhookRoutes from './routes/webhook.route.js';
 
 const app = express();
 
-app.use(bodyParser.json());
+// Apply security headers
+app.use(helmet());
+app.use(cors());
+
+// Apply rate limiting (e.g., 100 requests per 15 minutes)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(limiter);
+
+// Parse JSON and save raw body for signature validation
+app.use(bodyParser.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 
 app.use('/webhook', webhookRoutes);
 app.get('/', (req, res) => {
