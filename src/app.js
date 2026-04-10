@@ -21,22 +21,28 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Parse JSON and save raw body for signature validation
-app.use(bodyParser.json({
-  verify: (req, res, buf) => {
-    req.rawBody = buf;
-  }
-}));
+app.use(
+  bodyParser.json({
+    verify: (req, _, buf) => {
+      req.rawBody = buf;
+    },
+  }),
+);
 
 app.use('/webhook', webhookRoutes);
-app.get('/', (req, res) => {
-  res.json({ status: 'ok', message: 'AI Code Review Bot is running!', timestamp: new Date().toISOString() });
+app.get('/', (_, res) => {
+  res.json({
+    status: 'ok',
+    message: 'AI Code Review Bot is running!',
+    timestamp: new Date().toISOString(),
+  });
 });
 
-app.get('/health', (req, res) => {
+app.get('/health', (_, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.use((err, req, res, next) => {
+app.use((err, _, res) => {
   console.error(`Error: ${err.message}`);
   res.status(err.status || 500).json({
     error: {

@@ -20,16 +20,21 @@ export const handleWebhook = async (req, res, next) => {
         const installationId = installation?.id;
 
         if (!installationId) {
-          console.error('Webhook payload is missing installation.id. Ensure the bot is installed as a GitHub App.');
+          console.error(
+            'Webhook payload is missing installation.id. Ensure the bot is installed as a GitHub App.',
+          );
           return res.status(400).json({ error: 'Missing installation.id' });
         }
 
-        console.log(`Processing review for ${owner}/${repo} PR #${pullNumber} (Installation: ${installationId})`);
-        
+        console.log(
+          `Processing review for ${owner}/${repo} PR #${pullNumber} (Installation: ${installationId})`,
+        );
+
         // Run processing in background (don't block the webhook response)
-        reviewService.processPullRequest(installationId, owner, repo, pullNumber)
-          .catch(err => console.error('Error in background process:', err));
-        
+        reviewService
+          .processPullRequest(installationId, owner, repo, pullNumber)
+          .catch((err) => console.error('Error in background process:', err));
+
         return res.status(202).json({ message: 'Review process started' });
       }
     }

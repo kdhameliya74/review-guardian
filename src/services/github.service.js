@@ -65,8 +65,8 @@ export class GitHubService {
         event: 'COMMENT',
         body: summary,
         comments: (comments || [])
-          .filter(c => (c.path || c.file) && c.line && (c.comment || c.body))
-          .map(c => ({
+          .filter((c) => (c.path || c.file) && c.line && (c.comment || c.body))
+          .map((c) => ({
             path: c.path || c.file,
             line: parseInt(c.line, 10),
             body: `${this._formatSeverityLabel(c.severity)} ${c.comment || c.body}`,
@@ -82,14 +82,14 @@ export class GitHubService {
       let fallbackBody = `${summary}\n\n---\n\n#### Detailed AI Suggestions\n\n`;
 
       if (comments && comments.length > 0) {
-        comments.forEach(c => {
+        comments.forEach((c) => {
           const path = c.path || c.file;
           const line = c.line;
           const body = c.comment || c.body;
           fallbackBody += `**File:** \`${path}\` | **Line:** ${line}\n\n${this._formatSeverityLabel(c.severity)} ${body}\n\n---\n`;
         });
       } else {
-        fallbackBody += "_No specific line comments._";
+        fallbackBody += '_No specific line comments._';
       }
 
       // Falling back to single top-level comment due to line-specific comment error.

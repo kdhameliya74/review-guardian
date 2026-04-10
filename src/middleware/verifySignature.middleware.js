@@ -7,14 +7,16 @@ import config from '../config/env.config.js';
  */
 export const verifyGitHubSignature = (req, res, next) => {
   const signature = req.headers['x-hub-signature-256'];
-  
+
   if (!signature) {
     console.warn('Webhook received but no signature found on request.');
     return res.status(401).json({ error: 'No signature found on request' });
   }
 
   if (!req.rawBody) {
-    console.error('req.rawBody is missing! Ensure app.js configures express.json with a verify function.');
+    console.error(
+      'req.rawBody is missing! Ensure app.js configures express.json with a verify function.',
+    );
     return res.status(500).json({ error: 'Internal server error - unable to verify signature' });
   }
 
@@ -22,9 +24,14 @@ export const verifyGitHubSignature = (req, res, next) => {
     const hmac = crypto.createHmac('sha256', config.github.webhookSecret);
     const digest = 'sha256=' + hmac.update(req.rawBody).digest('hex');
 
-    if (signature.length !== digest.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest))) {
+    if (
+      signature.length !== digest.length ||
+      !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest))
+    ) {
       console.warn('Webhook signature mismatch.');
-      return res.status(401).json({ error: 'X-Hub-Signature-256 does not match request signature' });
+      return res
+        .status(401)
+        .json({ error: 'X-Hub-Signature-256 does not match request signature' });
     }
 
     next();

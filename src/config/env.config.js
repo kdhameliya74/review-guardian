@@ -38,7 +38,7 @@ const requiredVars = [
   'GITHUB_APP_ID',
   'GITHUB_PRIVATE_KEY',
   'GITHUB_WEBHOOK_SECRET',
-  'GEMINI_API_KEY'
+  'GEMINI_API_KEY',
 ];
 
 requiredVars.forEach((key) => {

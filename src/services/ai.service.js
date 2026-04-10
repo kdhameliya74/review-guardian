@@ -2,7 +2,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { diffAnalyzerPrompt } from '../prompts/review.prompt.js';
 import config from '../config/env.config.js';
 
-
 class RateLimitedQueue {
   constructor(requestsPerMinute = 12) {
     this.queue = [];
@@ -73,7 +72,7 @@ async function callWithRetry(fn, retries = 3, baseDelay = 2000) {
     try {
       return await fn();
     } catch (err) {
-      const is429 = err?.message?.includes("429");
+      const is429 = err?.message?.includes('429');
       const isLastAttempt = attempt === retries;
 
       if (is429 && !isLastAttempt) {
