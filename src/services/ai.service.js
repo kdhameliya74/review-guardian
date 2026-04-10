@@ -48,13 +48,19 @@ export class AIService {
   }
 
   async analyzeDiff(diff) {
-    console.log(`Analyzing diff using ${this.modelName}`);
-    const model = await this.getModel();
-    const prompt = diffAnalyzerPrompt(diff);
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    return text;
+    return geminiQueue.add(async () => {
+      return await callWithRetry(async () => {
+        console.log(`Analyzing diff using ${this.modelName}`);
+        const model = await this.getModel();
+        if (!model) throw new Error('AI Model not initialized');
+
+        const prompt = diffAnalyzerPrompt(diff);
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        console.log("AI RESPONSE", response.text());
+        return response.text();
+      });
+    });
   }
 }
 
