@@ -5,16 +5,27 @@ dotenv.config();
 /**
  * Environment configuration and validation
  */
+
+// Basic error checking before parsing private key
+const getPrivateKey = () => {
+  const pk = process.env.GITHUB_PRIVATE_KEY;
+  if (!pk) return undefined;
+  // If it's already a regular string key, return it. Otherwise try base64 decoding.
+  if (pk.includes('BEGIN RSA PRIVATE KEY')) return pk;
+  try {
+    return Buffer.from(pk, 'base64').toString('utf-8');
+  } catch (e) {
+    return pk;
+  }
+};
+
 export const config = {
   port: process.env.PORT || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
   github: {
     appId: process.env.GITHUB_APP_ID,
-    privateKey: Buffer
-      .from(process.env.GITHUB_PRIVATE_KEY, 'base64')
-      .toString('utf-8'),
+    privateKey: getPrivateKey(),
     webhookSecret: process.env.GITHUB_WEBHOOK_SECRET,
-    personalAccessToken: process.env.GITHUB_PAT,
   },
   ai: {
     apiKey: process.env.GEMINI_API_KEY,
@@ -22,15 +33,17 @@ export const config = {
   },
 };
 
-// Simple validation
+// Strict validation
 const requiredVars = [
+  'GITHUB_APP_ID',
+  'GITHUB_PRIVATE_KEY',
   'GITHUB_WEBHOOK_SECRET',
-  'GEMINI_API_KEY'
+  'GEMINI_API_KEY',
 ];
 
 requiredVars.forEach((key) => {
   if (!process.env[key]) {
-    console.warn(`Warning: Environment variable ${key} is missing.`);
+    throw new Error(`CRITICAL: Environment variable ${key} is missing. Application cannot start.`);
   }
 });
 

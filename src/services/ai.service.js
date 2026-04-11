@@ -2,7 +2,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { diffAnalyzerPrompt } from '../prompts/review.prompt.js';
 import config from '../config/env.config.js';
 
-
 class RateLimitedQueue {
   constructor(requestsPerMinute = 12) {
     this.queue = [];
@@ -44,17 +43,27 @@ export class AIService {
 
   async getModel() {
     if (!this.genAI) return null;
-    return this.genAI.getGenerativeModel({ model: this.modelName });
+    return this.genAI.getGenerativeModel({
+      model: this.modelName,
+      generationConfig: {
+        responseMimeType: 'application/json',
+      },
+    });
   }
 
   async analyzeDiff(diff) {
-    console.log(`Analyzing diff using ${this.modelName}`);
-    const model = await this.getModel();
-    const prompt = diffAnalyzerPrompt(diff);
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    return text;
+    return geminiQueue.add(async () => {
+      return await callWithRetry(async () => {
+        console.log(`Analyzing diff using ${this.modelName}`);
+        const model = await this.getModel();
+        if (!model) throw new Error('AI Model not initialized');
+
+        const prompt = diffAnalyzerPrompt(diff);
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+      });
+    });
   }
 }
 
@@ -63,7 +72,7 @@ async function callWithRetry(fn, retries = 3, baseDelay = 2000) {
     try {
       return await fn();
     } catch (err) {
-      const is429 = err?.message?.includes("429");
+      const is429 = err?.message?.includes('429');
       const isLastAttempt = attempt === retries;
 
       if (is429 && !isLastAttempt) {
