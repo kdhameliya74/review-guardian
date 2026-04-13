@@ -6,24 +6,30 @@ jest.unstable_mockModule('dotenv', () => ({
   },
 }));
 
+// All critical env vars the module checks — define once to avoid repetition
+const CRITICAL_ENV_VARS = [
+  'GITHUB_APP_ID',
+  'GITHUB_PRIVATE_KEY',
+  'GITHUB_WEBHOOK_SECRET',
+  'GEMINI_API_KEY',
+  'GITHUB_CLIENT_ID',
+  'GITHUB_CLIENT_SECRET',
+];
+
 describe('Environment Configuration', () => {
   let originalEnv;
 
   beforeEach(() => {
-    originalEnv = process.env;
-    process.env = { ...originalEnv };
+    jest.resetModules();
+    originalEnv = { ...process.env };
+    CRITICAL_ENV_VARS.forEach((key) => delete process.env[key]);
   });
 
   afterEach(() => {
-    process.env = originalEnv;
+    process.env = { ...originalEnv };
   });
 
   it('should throw an error if critical environment variables are missing', async () => {
-    delete process.env.GITHUB_APP_ID;
-    delete process.env.GITHUB_PRIVATE_KEY;
-    delete process.env.GITHUB_WEBHOOK_SECRET;
-    delete process.env.GEMINI_API_KEY;
-
     await expect(import(`../../src/config/env.config.js?t=${Date.now()}`)).rejects.toThrow(
       /CRITICAL: Environment variable.*is missing/,
     );
@@ -33,6 +39,8 @@ describe('Environment Configuration', () => {
     process.env.GITHUB_APP_ID = '12345';
     process.env.GITHUB_WEBHOOK_SECRET = 'secret';
     process.env.GEMINI_API_KEY = 'gemini-key';
+    process.env.GITHUB_CLIENT_ID = 'client-id';
+    process.env.GITHUB_CLIENT_SECRET = 'client-secret';
 
     const testKey = 'test-private-key';
     process.env.GITHUB_PRIVATE_KEY = Buffer.from(testKey).toString('base64');
@@ -45,6 +53,8 @@ describe('Environment Configuration', () => {
     process.env.GITHUB_APP_ID = '12345';
     process.env.GITHUB_WEBHOOK_SECRET = 'secret';
     process.env.GEMINI_API_KEY = 'gemini-key';
+    process.env.GITHUB_CLIENT_ID = 'client-id';
+    process.env.GITHUB_CLIENT_SECRET = 'client-secret';
 
     const testKey = '-----BEGIN RSA PRIVATE KEY-----\nHelloWorld\n-----END RSA PRIVATE KEY-----';
     process.env.GITHUB_PRIVATE_KEY = testKey;

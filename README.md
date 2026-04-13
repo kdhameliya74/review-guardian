@@ -15,7 +15,8 @@ An automated code review assistant powered by Google Gemini AI. This bot integra
 
 The bot operates by listening to GitHub Webhooks, fetching the PR diff, analyzing it via AI, and posting the results back as line-specific comments.
 
-![Workflow Diagram](./docs/AI-review-bot-workflow.svg)
+![Workflow Diagram](./docs/RG-App-Workflow.svg)
+![Auth Diagram](./docs/RG-Auth-Workflow.svg)
 
 ## ⚙️ Configuration
 

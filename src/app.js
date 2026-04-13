@@ -4,12 +4,14 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import webhookRoutes from './routes/webhook.route.js';
+import authRoutes from './routes/auth.route.js';
 
 const app = express();
 
 // Apply security headers
 app.use(helmet());
 app.use(cors());
+app.set('trust proxy', 1);
 
 // Apply rate limiting (e.g., 100 requests per 15 minutes)
 const limiter = rateLimit({
@@ -30,6 +32,8 @@ app.use(
 );
 
 app.use('/webhook', webhookRoutes);
+app.use('/auth', authRoutes);
+
 app.get('/', (_, res) => {
   res.json({
     status: 'ok',
@@ -42,8 +46,8 @@ app.get('/health', (_, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.use((err, _, res) => {
-  console.error(`Error: ${err.message}`);
+app.use((err, _req, res, _next) => {
+  console.error(`Global Error Catcher: ${err.message}`);
   res.status(err.status || 500).json({
     error: {
       message: err.message || 'Internal Server Error',

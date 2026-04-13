@@ -1,21 +1,20 @@
-import { Octokit } from 'octokit';
-import { createAppAuth } from '@octokit/auth-app';
+import { App } from 'octokit';
 import config from '../config/env.config.js';
 
 export class GitHubService {
-  _getOctokit(installationId) {
+  constructor() {
+    this.app = new App({
+      appId: config.github.appId,
+      privateKey: config.github.privateKey,
+    });
+  }
+
+  async _getOctokit(installationId) {
     if (!installationId) {
       throw new Error('installationId is required for GitHub App authentication');
     }
 
-    return new Octokit({
-      authStrategy: createAppAuth,
-      auth: {
-        appId: config.github.appId,
-        privateKey: config.github.privateKey,
-        installationId,
-      },
-    });
+    return await this.app.getInstallationOctokit(installationId);
   }
 
   /**
@@ -23,7 +22,7 @@ export class GitHubService {
    */
   async getPullRequestDiff(installationId, owner, repo, pullNumber) {
     try {
-      const octokit = this._getOctokit(installationId);
+      const octokit = await this._getOctokit(installationId);
       const { data } = await octokit.rest.pulls.get({
         owner,
         repo,
@@ -55,7 +54,7 @@ export class GitHubService {
 
   // Posts a review with line-specific comments to a Pull Request
   async postReview(installationId, owner, repo, pullNumber, comments, summary = '') {
-    const octokit = this._getOctokit(installationId);
+    const octokit = await this._getOctokit(installationId);
 
     try {
       const reviewPayload = {
@@ -102,7 +101,7 @@ export class GitHubService {
    */
   async postComment(installationId, owner, repo, pullNumber, body) {
     try {
-      const octokit = this._getOctokit(installationId);
+      const octokit = await this._getOctokit(installationId);
       await octokit.rest.issues.createComment({
         owner,
         repo,
