@@ -1,5 +1,4 @@
-import { OAuthApp } from '@octokit/oauth-app';
-import { Octokit } from "@octokit/rest";
+import { Octokit, OAuthApp } from 'octokit';
 import config from '../config/env.config.js';
 
 class AuthService {
@@ -11,12 +10,9 @@ class AuthService {
   }
 
   getOctokit(token) {
-    if (!this.octokit) {
-      this.octokit = new Octokit({
-        auth: token,
-      });
-    }
-    return this.octokit;
+    return new Octokit({
+      auth: token,
+    });
   }
 
   /**

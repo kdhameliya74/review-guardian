@@ -2,7 +2,7 @@ import authService from '../services/auth.service.js';
 
 export const handleCallback = async (req, res, next) => {
   try {
-    const { code, installation_id, setup_action } = req.query;
+    const { code, installation_id } = req.query;
 
     if (!code) {
       return res.status(400).json({
@@ -27,14 +27,10 @@ export const handleCallback = async (req, res, next) => {
           id: user.id,
         },
         installation_id: installation_id || 'already_installed',
-        setup_action: setup_action || 'none'
       },
       next_steps: 'You can now close this window and start using the bot on your authorized repositories.'
     });
   } catch (error) {
-    res.status(500).json({
-      error: 'Authentication failed',
-      message: error.message,
-    });
+    next(error);
   }
 };
