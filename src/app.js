@@ -11,7 +11,7 @@ const app = express();
 // Apply security headers
 app.use(helmet());
 app.use(cors());
-app.set("trust proxy", 1);
+app.set('trust proxy', 1);
 
 // Apply rate limiting (e.g., 100 requests per 15 minutes)
 const limiter = rateLimit({

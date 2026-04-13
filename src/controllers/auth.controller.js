@@ -28,7 +28,8 @@ export const handleCallback = async (req, res, next) => {
         },
         installation_id: installation_id || 'already_installed',
       },
-      next_steps: 'You can now close this window and start using the bot on your authorized repositories.'
+      next_steps:
+        'You can now close this window and start using the bot on your authorized repositories.',
     });
   } catch (error) {
     next(error);
