@@ -2,11 +2,8 @@ import reviewService from '../services/review.service.js';
 
 export const handleWebhook = async (req, res, next) => {
   try {
-    console.log('Received GitHub event--:', req.body);
     const event = req.headers['x-github-event'];
     const payload = req.body;
-
-    console.log(`Received GitHub event: ${event}`);
 
     // Filter for Pull Request events
     if (event === 'pull_request') {

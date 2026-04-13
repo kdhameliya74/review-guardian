@@ -24,6 +24,8 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   github: {
     appId: process.env.GITHUB_APP_ID,
+    clientId: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
     privateKey: getPrivateKey(),
     webhookSecret: process.env.GITHUB_WEBHOOK_SECRET,
   },
@@ -36,6 +38,8 @@ export const config = {
 // Strict validation
 const requiredVars = [
   'GITHUB_APP_ID',
+  'GITHUB_CLIENT_ID',
+  'GITHUB_CLIENT_SECRET',
   'GITHUB_PRIVATE_KEY',
   'GITHUB_WEBHOOK_SECRET',
   'GEMINI_API_KEY',
